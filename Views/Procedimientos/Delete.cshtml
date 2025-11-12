@@ -1,0 +1,22 @@
+﻿@model Veterinaria.Web.Models.ProcedimientoDto
+@{
+    ViewData["Title"] = "Eliminar Procedimiento";
+}
+<h1 class="mb-3 text-danger">Eliminar Procedimiento</h1>
+<p class="text-danger">¿Confirmás eliminar este registro?</p>
+
+<dl class="row">
+    <dt class="col-sm-3">Tipo</dt>
+    <dd class="col-sm-9">@Model.Tipo</dd>
+    <dt class="col-sm-3">Fecha</dt>
+    <dd class="col-sm-9">@((Model.Fecha != null) ? Model.Fecha.ToString("yyyy-MM-dd") : "")</dd>
+    <dt class="col-sm-3">Notas</dt>
+    <dd class="col-sm-9">@Model.Notas</dd>
+</dl>
+
+<form asp-action="Delete" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <button class="btn btn-danger" type="submit">Confirmar</button>
+    <a class="btn btn-secondary" asp-action="Index" asp-route-mascotaId="@(ViewBag.MascotaId)">Cancelar</a>
+</form>

@@ -1,0 +1,49 @@
+﻿@model IEnumerable<Veterinaria.Web.Models.Reportes.ReporteVacunacionProximaItem>
+@{
+    ViewData["Title"] = "Reporte: Vacunación Anual (semana que viene)";
+    var rango = (string?)ViewBag.RangoTexto ?? "";
+}
+
+<h1 class="mb-3">Vacunación anual — próximos 7 días (semana que viene)</h1>
+<p class="text-muted">Rango: @rango</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No hay clientes con vacunación anual programable para la semana próxima.</div>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Fecha Próxima</th>
+                <th>Días</th>
+                <th>Cliente</th>
+                <th>Cédula</th>
+                <th>Contacto</th>
+                <th>Mascota</th>
+                <th>Última Vacuna</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model)
+            {
+                <tr>
+                    <td>@r.FechaProximaVacunacion.ToString("yyyy-MM-dd")</td>
+                    <td>@r.DiasRestantes</td>
+                    <td>@($"{r.Nombre} {r.Apellidos}")</td>
+                    <td>@r.Cedula</td>
+                    <td>
+                        <div>@r.Telefono</div>
+                        <div>@r.Email</div>
+                    </td>
+                    <td>
+                        <div><strong>@r.MascotaNombre</strong> (@r.Especie)</div>
+                        <small class="text-muted">MascotaId: @r.MascotaId</small>
+                    </td>
+                    <td>@r.FechaUltimaVacunacion?.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

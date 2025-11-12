@@ -1,0 +1,22 @@
+﻿@model MascotaDto
+@{
+    ViewData["Title"] = "Eliminar Mascota";
+}
+<h1 class="mb-3 text-danger">Eliminar Mascota</h1>
+<p class="text-danger">¿Confirmás eliminar este registro?</p>
+
+<dl class="row">
+    <dt class="col-sm-3">Nombre</dt>
+    <dd class="col-sm-9">@Model.Nombre</dd>
+    <dt class="col-sm-3">Especie</dt>
+    <dd class="col-sm-9">@Model.Especie</dd>
+    <dt class="col-sm-3">Sexo</dt>
+    <dd class="col-sm-9">@Model.Sexo</dd>
+</dl>
+
+<form asp-action="Delete" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <button class="btn btn-danger" type="submit">Confirmar</button>
+    <a asp-action="Index" asp-route-clienteId="@Model.ClienteId" class="btn btn-secondary">Cancelar</a>
+</form>

@@ -1,0 +1,300 @@
+﻿@{
+    ViewData["Title"] = "Nuevo procedimiento";
+}
+
+<h2>Nuevo procedimiento</h2>
+
+<form id="form" onsubmit="return false;">
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Cliente</label>
+            <select id="selCliente" class="form-select" required>
+                <option value="">— Seleccione —</option>
+            </select>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">Mascota</label>
+            <select id="selMascota" class="form-select" required disabled>
+                <option value="">— Seleccione —</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Peso de la mascota (kg)</label>
+            <input id="pesoKg" type="number" step="0.01" min="0" class="form-control" />
+            <small class="text-muted">Si no se carga automáticamente, escríbalo.</small>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Tipo (enum)</label>
+            <select id="tipoEnum" class="form-select" required>
+                <option value="Consulta">Consulta</option>
+                <option value="Cirugia">Cirugia</option>
+                <option value="Grooming">Grooming</option>
+                <option value="VacunasAnuales">VacunasAnuales</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Fecha</label>
+            <input id="fecha" type="datetime-local" class="form-control" required />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Catálogo</label>
+            <select id="codigo" class="form-select">
+                <option value="">— Seleccione —</option>
+            </select>
+            <small class="text-muted">Usamos esto para sugerir precio y tipo.</small>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Notas</label>
+            <textarea id="notas" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label">Precio (CRC)</label>
+            <input id="precio" type="number" step="0.01" min="0" class="form-control" />
+            <small id="ayudaPrecio" class="text-muted"></small>
+        </div>
+
+        <div class="col-12">
+            <button id="btnGuardar" class="btn btn-primary">Guardar</button>
+            <a class="btn btn-outline-secondary" asp-controller="Procedimientos" asp-action="Index">Cancelar</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        (() => {
+          const API = window.API_BASE;
+
+          // controls
+          const selCliente = document.getElementById('selCliente');
+          const selMascota = document.getElementById('selMascota');
+          const pesoKg     = document.getElementById('pesoKg');
+          const tipoEnum   = document.getElementById('tipoEnum');
+          const fecha      = document.getElementById('fecha');
+          const codigo     = document.getElementById('codigo');
+          const notas      = document.getElementById('notas');
+          const precio     = document.getElementById('precio');
+          const ayudaPrecio= document.getElementById('ayudaPrecio');
+          const btnGuardar = document.getElementById('btnGuardar');
+
+          // fecha por defecto (ahora local)
+          const now = new Date();
+          fecha.value = new Date(now.getTime() - now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+
+          // helpers para casings distintos
+          const cid   = c => c.id ?? c.Id ?? c.clienteId ?? c.ClienteId ?? c.guid ?? c.Guid;
+          const cname = c => (c.nombreCompleto ?? c.NombreCompleto) ??
+                            ((c.nombre ?? c.Nombre) + ' ' + (c.apellidos ?? c.Apellidos || '')).trim() ||
+                            c.email || c.Email || cid(c);
+          const mid   = m => m.id ?? m.Id ?? m.mascotaId ?? m.MascotaId;
+          const mname = m => m.nombre ?? m.Nombre ?? m.nombreMascota ?? m.NombreMascota ?? mid(m);
+          const mpeso = m => m.pesoKg ?? m.PesoKg ?? m.peso ?? m.Peso;
+
+          let catalogo = [];         // {codigo,nombre,incluye,precio,activo}
+          let castraciones = [];     // subset castración
+          let cirMenor = null, cirMayor = null;
+
+          // cargar clientes (todos)
+          async function cargarClientes() {
+            try {
+              const r = await fetch(`${API}/Clientes`);
+              if (!r.ok) throw new Error('Clientes no disponibles');
+              const data = await r.json();
+              selCliente.innerHTML = `<option value="">— Seleccione —</option>`;
+              (Array.isArray(data) ? data : [data]).forEach(c => {
+                const id = cid(c); if (!id) return;
+                const o = document.createElement('option');
+                o.value = id; o.textContent = cname(c);
+                selCliente.append(o);
+              });
+            } catch (e) {
+              selCliente.innerHTML = `<option value="">(Error al cargar clientes)</option>`;
+              alert('No fue posible cargar la lista de clientes.');
+              console.error(e);
+            }
+          }
+
+          // cambiar cliente -> cargar mascotas
+          selCliente.addEventListener('change', async () => {
+            selMascota.innerHTML = `<option value="">— Seleccione —</option>`;
+            selMascota.disabled = true;
+            pesoKg.value = '';
+
+            const id = selCliente.value;
+            if (!id) return;
+
+            try {
+              const url = new URL(location.origin + `${API}/Mascotas`);
+              url.searchParams.set('clienteId', id);
+              const r = await fetch(url);
+              if (!r.ok) throw new Error('Mascotas no disponibles');
+              const data = await r.json();
+              selMascota.innerHTML = `<option value="">— Seleccione —</option>`;
+              (Array.isArray(data) ? data : [data]).forEach(m => {
+                const o = document.createElement('option');
+                o.value = mid(m); o.textContent = mname(m);
+                o.dataset.raw = JSON.stringify(m);
+                selMascota.append(o);
+              });
+              selMascota.disabled = false;
+            } catch (e) {
+              selMascota.innerHTML = `<option value="">(Error al cargar mascotas)</option>`;
+              alert('No fue posible cargar mascotas del cliente.');
+              console.error(e);
+            }
+          });
+
+          // elegir mascota -> intentar leer peso desde detalle
+          selMascota.addEventListener('change', async () => {
+            pesoKg.value = '';
+            const id = selMascota.value;
+            if (!id) return;
+            try {
+              const r = await fetch(`${API}/Mascotas/${id}`);
+              if (r.ok) {
+                const m = await r.json();
+                const w = mpeso(m);
+                if (w != null && !isNaN(w)) pesoKg.value = Number(w);
+              }
+            } catch {}
+            recalcularPrecio(true);
+          });
+
+          // cargar catálogo
+          async function cargarCatalogo() {
+            const r = await fetch(`${API}/catalogo-procedimientos`);
+            if (!r.ok) return;
+            catalogo = await r.json();
+            codigo.innerHTML = `<option value="">— Seleccione —</option>`;
+            catalogo.forEach(x => {
+              const opt = document.createElement('option');
+              opt.value = x.codigo;
+              opt.textContent = `${x.nombre} — ₡${Number(x.precio).toLocaleString('es-CR')}`;
+              opt.dataset.nombre = x.nombre || '';
+              opt.dataset.precio = x.precio;
+              codigo.append(opt);
+            });
+            castraciones = catalogo.filter(x => (x.nombre || '').toLowerCase().includes('castración'));
+            cirMenor     = catalogo.find(x => (x.nombre || '').toLowerCase().includes('cirugía menor'));
+            cirMayor     = catalogo.find(x => (x.nombre || '').toLowerCase().includes('cirugía mayor'));
+          }
+
+          // sugerir enum por nombre
+          function sugerirTipo(nombre) {
+            const n = (nombre || '').toLowerCase();
+            if (n.includes('consulta')) return 'Consulta';
+            if (n.includes('grooming')) return 'Grooming';
+            if (n.includes('vacuna'))   return 'VacunasAnuales';
+            if (n.includes('castración') || n.includes('cirugía')) return 'Cirugia';
+            return tipoEnum.value;
+          }
+
+          // castración por rango
+          function pickCastracionPorPeso(kg) {
+            if (kg == null || isNaN(kg)) return null;
+            const n = Number(kg);
+            const buckets = [
+              { tag: '0-5',  min: 0,  max: 5 },
+              { tag: '5-10', min: 5,  max: 10 },
+              { tag: '10-20',min: 10, max: 20 },
+              { tag: '20-30',min: 20, max: 30 },
+              { tag: '30-50',min: 30, max: 50 },
+            ];
+            const b = buckets.find(b => n >= b.min && n <= b.max);
+            if (!b) return null;
+            return castraciones.find(x => (x.nombre || '').includes(b.tag)) ?? null;
+          }
+
+          function setPrecio(v, help) {
+            precio.value = (v != null && !isNaN(v)) ? Number(v).toFixed(2) : '';
+            ayudaPrecio.textContent = help || '';
+          }
+
+          function recalcularPrecio(forceCastracion=false) {
+            const opt = codigo.selectedOptions[0];
+            const kg = parseFloat(pesoKg.value || '0');
+            if (!opt || !opt.value) { setPrecio('', ''); return; }
+
+            const nombre = (opt.dataset.nombre || '');
+            const base = parseFloat(opt.dataset.precio || '0');
+            const lower = nombre.toLowerCase();
+
+            // Cirugías por kilo
+            if (lower.includes('cirugía menor') && !isNaN(kg) && kg > 0) {
+              setPrecio(base * kg, `Cirugía menor: ₡${base.toLocaleString('es-CR')} × ${kg} kg`);
+              tipoEnum.value = 'Cirugia';
+              return;
+            }
+            if (lower.includes('cirugía mayor') && !isNaN(kg) && kg > 0) {
+              setPrecio(base * kg, `Cirugía mayor: ₡${base.toLocaleString('es-CR')} × ${kg} kg`);
+              tipoEnum.value = 'Cirugia';
+              return;
+            }
+
+            // Castración por rango de peso
+            if (lower.includes('castración')) {
+              const pick = pickCastracionPorPeso(kg);
+              if (pick && (forceCastracion || pick.codigo !== codigo.value)) {
+                for (const o of codigo.options) if (o.value === pick.codigo) { o.selected = true; break; }
+                setPrecio(pick.precio, `Castración (${pick.nombre.replace('Castración de ','')})`);
+                tipoEnum.value = 'Cirugia';
+                return;
+              }
+              setPrecio(base, 'Castración (verifique rango según peso)');
+              tipoEnum.value = 'Cirugia';
+              return;
+            }
+
+            // Otros
+            setPrecio(base, 'Precio de catálogo (editable)');
+            tipoEnum.value = sugerirTipo(nombre);
+          }
+
+          codigo.addEventListener('change', () => recalcularPrecio(true));
+          pesoKg.addEventListener('input', () => recalcularPrecio());
+
+          // guardar
+          btnGuardar.addEventListener('click', async () => {
+            if (!selCliente.value) { alert('Seleccione un cliente.'); return; }
+            if (!selMascota.value) { alert('Seleccione una mascota.'); return; }
+
+            const payload = {
+              mascotaId: selMascota.value,
+              clienteId: selCliente.value,       // si lo mandamos, el servicio no necesita buscarlo
+              empleadoId: null,
+              tipo: tipoEnum.value,
+              fecha: fecha.value,
+              notas: notas.value || null,
+              precio: precio.value ? parseFloat(precio.value) : null
+            };
+
+            let url = `${API}/ProcedimientoMascotas`;
+            if (!payload.precio && codigo.value) url += `?codigo=${encodeURIComponent(codigo.value)}`;
+
+            const r = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type':'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!r.ok) {
+              const body = await r.text();
+              alert('Error al crear: ' + body);
+              return;
+            }
+            location.href = '@Url.Action("Index", "Procedimientos")';
+          });
+
+          // init
+          cargarClientes();
+          cargarCatalogo();
+        })();
+    </script>
+}

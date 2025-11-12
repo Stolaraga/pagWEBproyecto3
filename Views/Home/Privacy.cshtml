@@ -1,0 +1,96 @@
+﻿@{
+    ViewData["Title"] = "Política de Privacidad";
+    var hoy = DateTime.Today.ToString("yyyy-MM-dd");
+}
+<h1 class="mb-4">@ViewData["Title"]</h1>
+
+<p class="text-muted">Última actualización: @hoy</p>
+
+<div class="mb-4">
+    <p>
+        Esta aplicación <strong>“Veterinaria — DSW Proyecto 2”</strong> es un proyecto académico desarrollado con ASP.NET Core MVC (.NET 8) que
+        consume una API REST propia. Su finalidad es didáctica y no persigue fines comerciales.
+    </p>
+</div>
+
+<h2 class="h5 mt-4">1. Qué datos tratamos</h2>
+<ul>
+    <li><strong>Clientes:</strong> cédula, nombre, apellidos, correo, teléfono.</li>
+    <li><strong>Mascotas:</strong> nombre, especie, raza (opcional), sexo, fecha de nacimiento, estado (activo).</li>
+    <li><strong>Procedimientos (Atenciones):</strong> tipo (p. ej. Vacunación Anual), fecha, notas, vínculo con cliente/mascota/empleado.</li>
+    <li><strong>Empleados:</strong> nombre, apellidos, rol, correo, teléfono, fecha de ingreso, estado (activo).</li>
+    <li><strong>Metadatos técnicos:</strong> registros de errores y diagnóstico de la aplicación.</li>
+</ul>
+
+<h2 class="h5 mt-4">2. Finalidad del tratamiento</h2>
+<p>
+    Los datos se utilizan exclusivamente para demostrar funcionalidades de CRUD, consultas y reportes (por ejemplo,
+    proyección de vacunación anual). No se venden ni comparten con terceros con fines comerciales.
+</p>
+
+<h2 class="h5 mt-4">3. Base legítima</h2>
+<p>
+    Uso con fines educativos y de prueba. En entornos reales, la base jurídica sería el <em>consentimiento</em> o la
+    <em>ejecución de un contrato</em> según corresponda.
+</p>
+
+<h2 class="h5 mt-4">4. Origen y almacenamiento</h2>
+<ul>
+    <li>Los datos pueden estar <strong>precargados (seed)</strong> o ingresados manualmente.</li>
+    <li>Se almacenan en la capa de datos de la API del proyecto (por ejemplo, memoria, SQLite o SQL Server, según configuración).</li>
+</ul>
+
+<h2 class="h5 mt-4">5. Cookies y tecnologías similares</h2>
+<p>Este sitio utiliza cookies técnicas esenciales para su funcionamiento:</p>
+<table class="table table-sm">
+    <thead>
+        <tr>
+            <th>Cookie</th>
+            <th>Uso</th>
+            <th>Duración</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>.AspNetCore.Antiforgery.*</td>
+            <td>Protección anti-CSRF en formularios.</td>
+            <td>Sesión</td>
+        </tr>
+        <tr>
+            <td>.AspNetCore.Session / .AspNetCore.Cookies (si aplica)</td>
+            <td>Mantener estado de sesión/autenticación.</td>
+            <td>Sesión / Configurable</td>
+        </tr>
+    </tbody>
+</table>
+<p class="text-muted mb-0">
+    No se emplean cookies de analítica o publicidad por defecto. Si se agregaran, se solicitará consentimiento previo.
+</p>
+
+<h2 class="h5 mt-4">6. Retención y eliminación</h2>
+<ul>
+    <li>En modo demostración, los datos pueden <strong>reinicializarse</strong> al reiniciar la aplicación.</li>
+    <li>Para entornos reales, los datos se conservarían mientras sean necesarios para la finalidad indicada o según la ley aplicable.</li>
+</ul>
+
+<h2 class="h5 mt-4">7. Seguridad</h2>
+<p>
+    Se aplican prácticas estándar del framework (validaciones, antiforgery, serialización segura).
+    En despliegues reales se recomienda usar HTTPS con certificados válidos, controles de acceso y cifrado en tránsito y reposo.
+</p>
+
+<h2 class="h5 mt-4">8. Transferencias y terceros</h2>
+<p>
+    La app no comparte datos con terceros ajenos al proyecto. No hay transferencias internacionales planificadas.
+</p>
+
+<h2 class="h5 mt-4">9. Cambios en esta política</h2>
+<p>
+    Podemos actualizar este texto para reflejar mejoras o cambios técnicos. Publicaremos la versión vigente en esta página.
+</p>
+
+<h2 class="h5 mt-4">10. Contacto</h2>
+<p>
+    <strong>Responsable del proyecto:</strong> <span class="text-muted">TODO: Elias Granados Ulloa / Fundamentos de desarrollo web</span><br />
+    
+</p>

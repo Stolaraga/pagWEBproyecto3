@@ -1,0 +1,85 @@
+﻿@{
+    ViewData["Title"] = "Inicio";
+}
+
+<section class="hero-proy2 text-white rounded-4 p-5 mb-4">
+    <div class="container py-4">
+        <h1 class="display-5 fw-bold">Veterinaria — DSW Proyecto 2</h1>
+        <p class="col-lg-8 fs-5 mt-3 mb-4">
+            Aplicación ASP.NET Core MVC (.NET 8) que consume la API REST para la gestión de
+            clientes, mascotas, empleados y procedimientos (atenciones). Incluye reporte de
+            vacunación anual proyectada para la semana próxima.
+            Realizado por Elías Granados Ulloa
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-light btn-lg" asp-controller="Clientes" asp-action="Index">Clientes</a>
+            <a class="btn btn-outline-light btn-lg" asp-controller="Mascotas" asp-action="Index">Mascotas</a>
+            <a class="btn btn-outline-light btn-lg" asp-controller="Empleados" asp-action="Index">Empleados</a>
+            <a class="btn btn-outline-light btn-lg" asp-controller="Procedimientos" asp-action="Index">Procedimientos</a>
+            <a class="btn btn-success btn-lg" asp-controller="Reportes" asp-action="VacunacionAnual">Reporte de Vacunación</a>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Clientes</h5>
+                <p class="card-text text-secondary">
+                    Alta, edición y eliminación de clientes. Datos básicos de contacto.
+                </p>
+                <a asp-controller="Clientes" asp-action="Index" class="stretched-link">Ir a Clientes</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Mascotas</h5>
+                <p class="card-text text-secondary">
+                    Gestión de mascotas por cliente, especie, sexo y fecha de nacimiento.
+                </p>
+                <a asp-controller="Mascotas" asp-action="Index" class="stretched-link">Ir a Mascotas</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Empleados</h5>
+                <p class="card-text text-secondary">
+                    Registro de personal y roles (veterinario, asistente, recepción, etc.).
+                </p>
+                <a asp-controller="Empleados" asp-action="Index" class="stretched-link">Ir a Empleados</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Procedimientos</h5>
+                <p class="card-text text-secondary">
+                    Atenciones de mascotas. El dueño no es editable; cambia con la mascota seleccionada.
+                </p>
+                <a asp-controller="Procedimientos" asp-action="Index" class="stretched-link">Ir a Procedimientos</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Reporte de Vacunación</h5>
+                <p class="card-text text-secondary">
+                    Proyección de vacunación anual para la semana que viene según la fecha actual.
+                </p>
+                <a asp-controller="Reportes" asp-action="VacunacionAnual" class="stretched-link">Ver Reporte</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="mt-5 small text-muted">
+    <div>DSW — Fundamentos de Programación Web · Proyecto 2</div>
+    <div>ASP.NET Core MVC (.NET 8) · HttpClientFactory · API REST</div>
+</footer>

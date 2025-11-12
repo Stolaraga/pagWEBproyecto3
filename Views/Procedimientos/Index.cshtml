@@ -1,0 +1,64 @@
+﻿@model IEnumerable<ProcedimientoDto>
+@{
+    ViewData["Title"] = "Procedimientos";
+    var cr = System.Globalization.CultureInfo.GetCultureInfo("es-CR");
+}
+
+<h2>Procedimientos</h2>
+
+<p>
+    <a class="btn btn-primary" asp-controller="Procedimientos" asp-action="Create">Nueva</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Mascota</th>
+            <th>Tipo</th>
+            <th class="text-end">Precio</th>
+            <th>Estado</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model ?? Enumerable.Empty<ProcedimientoDto>())
+        {
+            <tr>
+                <td>@p.Fecha.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@(string.IsNullOrWhiteSpace(p.NombreMascota) ? p.MascotaId.ToString() : p.NombreMascota)</td>
+                <td>@p.Tipo</td>
+                <td class="text-end">@p.Precio.ToString("C0", cr)</td>
+                <td>@p.Estado</td>
+                <td>
+                    <a asp-controller="Procedimientos" asp-action="Details" asp-route-id="@p.Id">Detalles</a> |
+                    <a asp-controller="Procedimientos" asp-action="Edit" asp-route-id="@p.Id">Editar</a> |
+                    <a href="#" class="js-del" data-id="@p.Id">Eliminar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        document.addEventListener('click', async (ev) => {
+          const a = ev.target.closest('a.js-del');
+          if (!a) return;
+          ev.preventDefault();
+          if (!confirm('¿Eliminar este procedimiento?')) return;
+          const id = a.dataset.id;
+          try {
+            const resp = await fetch(`/api/ProcedimientoMascotas/${id}`, { method: 'DELETE' });
+            if (!resp.ok) {
+              const body = await resp.text();
+              alert('No fue posible eliminar.\n' + body);
+              return;
+            }
+            location.reload();
+          } catch (e) {
+            alert('Error de red al eliminar.');
+          }
+        });
+    </script>
+}

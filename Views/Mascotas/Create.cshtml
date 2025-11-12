@@ -1,0 +1,75 @@
+﻿@model MascotaDto
+@{
+    ViewData["Title"] = "Crear Mascota";
+    string[] sexos = ViewBag.Sexos ?? Array.Empty<string>();
+    string[] especies = ViewBag.Especies ?? Array.Empty<string>();
+    bool tienePrefijado = ViewBag.TieneClientePrefijado is bool b && b;
+}
+<h1 class="mb-3">Crear Mascota</h1>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    @if (tienePrefijado)
+    {
+        <input type="hidden" asp-for="ClienteId" />
+        <div class="mb-3">
+            <label class="form-label">Cliente</label>
+            <input class="form-control" value="@Model.ClienteId" readonly />
+            <div class="form-text">El cliente fue preseleccionado desde la pantalla de Clientes.</div>
+        </div>
+    }
+    else
+    {
+        <div class="mb-3">
+            <label class="form-label" asp-for="ClienteId">Cliente</label>
+            <select class="form-select" asp-for="ClienteId" asp-items="ViewBag.Clientes"></select>
+            <span asp-validation-for="ClienteId" class="text-danger"></span>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label asp-for="Nombre" class="form-label"></label>
+            <input asp-for="Nombre" class="form-control" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label asp-for="Especie" class="form-label"></label>
+            <select asp-for="Especie" class="form-select" asp-items="@(new SelectList(especies))"></select>
+            <span asp-validation-for="Especie" class="text-danger"></span>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label asp-for="Raza" class="form-label"></label>
+            <input asp-for="Raza" class="form-control" />
+            <span asp-validation-for="Raza" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label asp-for="Sexo" class="form-label"></label>
+            <select asp-for="Sexo" class="form-select" asp-items="@(new SelectList(sexos))"></select>
+            <span asp-validation-for="Sexo" class="text-danger"></span>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label asp-for="FechaNacimiento" class="form-label"></label>
+            <input asp-for="FechaNacimiento" class="form-control" type="date" />
+            <span asp-validation-for="FechaNacimiento" class="text-danger"></span>
+        </div>
+        <div class="col-md-4 mb-3 d-flex align-items-end">
+            <div class="form-check">
+                <input class="form-check-input" asp-for="Activo" />
+                <label class="form-check-label" asp-for="Activo">Activo</label>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-success" type="submit">Guardar</button>
+    <a asp-action="Index" asp-route-clienteId="@Model.ClienteId" class="btn btn-secondary">Volver</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,31 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.hero-proy2 {
+    background: radial-gradient(1200px 500px at 10% -10%, rgba(13,110,253,.25), rgba(13,110,253,0)), linear-gradient(135deg, #0d6efd 0%, #20c997 100%);
+    box-shadow: 0 1.25rem 2rem rgba(0,0,0,.08);
+}
+
+    .hero-proy2 .btn {
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
+    }

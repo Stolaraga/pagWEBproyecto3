@@ -1,0 +1,41 @@
+﻿@model IEnumerable<Veterinaria.Web.Models.MascotaDto>
+@{
+    ViewData["Title"] = "Mascotas";
+}
+<h1 class="mb-3">Mascotas</h1>
+
+<p>
+    <a class="btn btn-primary" asp-action="Create">Nueva</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Especie</th>
+            <th>Raza</th>
+            <th>Sexo</th>
+            <th>Nacimiento</th>
+            <th>Activo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var m in Model)
+        {
+            <tr>
+                <td>@m.Nombre</td>
+                <td>@m.Especie</td>
+                <td>@m.Raza</td>
+                <td>@m.Sexo</td>
+                <td>@m.FechaNacimiento?.ToString("yyyy-MM-dd")</td>
+                <td>@(m.Activo ? "Sí" : "No")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@m.Id">Detalles</a> |
+                    <a asp-action="Edit" asp-route-id="@m.Id">Editar</a> |
+                    <a asp-action="Delete" asp-route-id="@m.Id">Eliminar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

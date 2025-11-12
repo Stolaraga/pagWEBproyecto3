@@ -1,0 +1,26 @@
+﻿@model Veterinaria.Web.Models.ClienteDto
+@{
+    ViewData["Title"] = "Eliminar Cliente";
+}
+<h1 class="mb-3 text-danger">Eliminar Cliente</h1>
+<p class="text-danger">¿Confirmás eliminar este registro?</p>
+
+<dl class="row">
+    <dt class="col-sm-3">Cédula</dt>
+    <dd class="col-sm-9">@Model.Cedula</dd>
+    <dt class="col-sm-3">Nombre</dt>
+    <dd class="col-sm-9">@($"{Model.Nombre} {Model.Apellidos}")</dd>
+    <dt class="col-sm-3">Teléfono</dt>
+    <dd class="col-sm-9">@Model.Telefono</dd>
+    <dt class="col-sm-3">Canal</dt>
+    <dd class="col-sm-9">@Model.CanalPreferido</dd>
+    <dt class="col-sm-3">Dirección</dt>
+    <dd class="col-sm-9">@Model.Direccion</dd>
+</dl>
+
+<form asp-action="Delete" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Confirmar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>

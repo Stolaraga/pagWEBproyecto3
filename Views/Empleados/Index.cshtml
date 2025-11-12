@@ -1,0 +1,50 @@
+﻿@model IEnumerable<EmpleadoDto>
+@{
+    ViewData["Title"] = "Empleados";
+}
+<h1 class="mb-3">Empleados</h1>
+
+<p><a class="btn btn-primary" asp-action="Create">Nuevo</a></p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Rol</th>
+            <th>Ingreso</th>
+            <th>Activo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var e in Model)
+        {
+            <tr>
+                <td>@($"{e.Nombre} {e.Apellidos}")</td>
+                <td>@e.Email</td>
+                <td>@e.Telefono</td>
+                <td>@e.Rol</td>
+                <td>@e.FechaIngreso?.ToString("yyyy-MM-dd")</td>
+                <td>@(e.Activo ? "Sí" : "No")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@e.Id">Detalles</a> |
+                    <a asp-action="Edit" asp-route-id="@e.Id">Editar</a> |
+                    <a asp-action="Delete" asp-route-id="@e.Id">Eliminar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
