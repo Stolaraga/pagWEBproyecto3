@@ -51,7 +51,7 @@ namespace Veterinaria.Web.Models
         [JsonPropertyName("nombreCompleto")]
         public string? NombreCompleto
         {
-            get => null; // así queda null al serializar y no se envía
+            get => null; 
             set
             {
                 if (string.IsNullOrWhiteSpace(value)) return;

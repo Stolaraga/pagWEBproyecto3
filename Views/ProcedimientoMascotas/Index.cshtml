@@ -1,0 +1,19 @@
+﻿@{
+    ViewData["Title"] = "Procedimiento Mascotas";
+}
+
+<h2 class="mb-3">Procedimiento Mascotas</h2>
+
+<div class="mb-3">
+    <a asp-action="Create" class="btn btn-primary">Nuevo</a>
+</div>
+
+<!-- Aquí tu grid/tabla actual del Index -->
+<div>
+    @* tabla de procedimientos *@
+</div>
+
+@if (TempData["Ok"] is string okMsg)
+{
+    <div class="alert alert-success mt-3">@okMsg</div>
+}
