@@ -108,6 +108,47 @@ namespace Veterinaria.Web.Services
                    ) ?? Enumerable.Empty<ProcedimientoMascotaDto>();
         }
 
+        public async Task<CitaReadDto?> GetCitaAsync(Guid id, CancellationToken ct = default)
+        {
+            var url = $"api/citas/{id:D}";
+            using var resp = await _http.GetAsync(url, ct);
+
+            if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+                return null;
+
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            if (!resp.IsSuccessStatusCode)
+                throw new HttpRequestException($"GET {url} => {(int)resp.StatusCode}. {body}");
+
+            return System.Text.Json.JsonSerializer.Deserialize<CitaReadDto>(
+                body,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+            );
+        }
+
+        public async Task<bool> UpdateCitaAsync(Guid id, CitaUpdateDto dto, CancellationToken ct = default)
+{
+    var url = $"api/citas/{id:D}";
+
+    // Solo los campos editables que no rompen SQLDateTime:
+    var payload = new
+    {
+        estado = dto.Estado,
+        notas = dto.Notas,
+        precioCobrado = dto.PrecioCobrado,
+        pesoKg = dto.PesoKg
+        // OJO: no enviamos fechaHora, mascotaId, servicioId, veterinarioId
+    };
+
+    using var resp = await _http.PutAsJsonAsync(url, payload, ct);
+    var body = await resp.Content.ReadAsStringAsync(ct);
+    if (!resp.IsSuccessStatusCode)
+        throw new HttpRequestException($"PUT {url} => {(int)resp.StatusCode}. {body}");
+    return true;
+}
+
+
+
         public sealed class CitaReadDto
         {
             public Guid Id { get; set; }
@@ -123,7 +164,21 @@ namespace Veterinaria.Web.Services
             public string? Servicio { get; set; }
             public string? Veterinario { get; set; }
             public decimal? PrecioCobrado { get; set; }
+            public decimal? PesoKg { get; init; }
         }
+
+        public sealed class CitaUpdateDto
+        {
+            public Guid MascotaId { get; set; }
+            public int ServicioId { get; set; }
+            public Guid VeterinarioId { get; set; }
+            public DateTime FechaHora { get; set; }
+            public string? Estado { get; set; }
+            public string? Notas { get; set; }
+            public decimal? PrecioCobrado { get; set; }
+            public decimal? PesoKg { get; init; }
+        }
+
 
         public async Task<IEnumerable<CitaReadDto>> GetCitasAsync(
             Guid? mascotaId = null,
@@ -150,6 +205,17 @@ namespace Veterinaria.Web.Services
                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                    ) ?? Enumerable.Empty<CitaReadDto>();
         }
+
+        public async Task<bool> DeleteCitaAsync(Guid id, CancellationToken ct = default)
+        {
+            var url = $"api/citas/{id:D}";
+            using var resp = await _http.DeleteAsync(url, ct);
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            if (!resp.IsSuccessStatusCode)
+                throw new HttpRequestException($"DELETE {url} => {(int)resp.StatusCode}. {body}");
+            return true;
+        }
+
 
 
     }

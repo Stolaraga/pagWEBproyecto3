@@ -34,4 +34,10 @@ namespace Veterinaria.Web.Models
         public DateTime Fecha { get; set; } = DateTime.Now;
         public string? Notas { get; set; }
     }
+
+
+    
+
+
+
 }

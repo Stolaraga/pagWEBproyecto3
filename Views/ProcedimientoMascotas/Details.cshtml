@@ -1,27 +1,37 @@
-﻿@model Veterinaria.Web.Models.ProcedimientoMascotaDto
+﻿@model Veterinaria.Web.Services.ProcedimientoMascotasApiClient.CitaReadDto
 @{
-    ViewData["Title"] = "Detalle de Procedimiento";
+    ViewData["Title"] = "Detalle del procedimiento";
 }
-<h1 class="mb-3">Detalle de Procedimiento</h1>
+<h2 class="mb-3">@ViewData["Title"]</h2>
 
-<dl class="row">
-    <dt class="col-sm-3">Id</dt>
-    <dd class="col-sm-9">@Model.Id</dd>
-    <dt class="col-sm-3">Cliente</dt>
-    <dd class="col-sm-9">@Model.ClienteId</dd>
-    <dt class="col-sm-3">Mascota</dt>
-    <dd class="col-sm-9">@Model.MascotaId</dd>
-    <dt class="col-sm-3">Empleado</dt>
-    <dd class="col-sm-9">@Model.EmpleadoId</dd>
-    <dt class="col-sm-3">Tipo</dt>
-    <dd class="col-sm-9">@Model.Tipo</dd>
-    <dt class="col-sm-3">Fecha</dt>
-    <dd class="col-sm-9">@((Model.Fecha != null) ? Model.Fecha.ToString("yyyy-MM-dd") : "")</dd>
-    <dt class="col-sm-3">Notas</dt>
-    <dd class="col-sm-9">@Model.Notas</dd>
-</dl>
+<div class="card p-3">
+    <dl class="row">
+        <dt class="col-sm-3">Mascota</dt>
+        <dd class="col-sm-9">@Model?.NombreMascota</dd>
 
-<p>
-    <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id" asp-route-mascotaId="@(ViewBag.MascotaId)">Editar</a>
-    <a class="btn btn-secondary" asp-action="Index" asp-route-mascotaId="@(ViewBag.MascotaId)">Volver</a>
-</p>
+        <dt class="col-sm-3">Servicio</dt>
+        <dd class="col-sm-9">@Model?.Servicio</dd>
+
+        <dt class="col-sm-3">Fecha/Hora</dt>
+        <dd class="col-sm-9">@Model.FechaHora.ToString("yyyy-MM-dd HH:mm")</dd>
+
+        <dt class="col-sm-3">Estado</dt>
+        <dd class="col-sm-9">@Model?.Estado</dd>
+
+        <dt class="col-sm-3">Precio cobrado</dt>
+        <dd class="col-sm-9">@((Model?.PrecioCobrado ?? 0m).ToString("C0", new System.Globalization.CultureInfo("es-CR")))</dd>
+
+        <dt class="col-sm-3">Veterinario</dt>
+        <dd class="col-sm-9">@Model?.Veterinario</dd>
+
+        <dt class="col-sm-3">Notas</dt>
+        <dd class="col-sm-9">@Model?.Notas</dd>
+    </dl>
+
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-secondary">Volver</a>
+        <!-- estos botones los activaremos cuando hagamos Edit y Delete -->
+        @* <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar</a>
+       <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Eliminar</a> *@
+    </div>
+</div>

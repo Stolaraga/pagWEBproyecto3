@@ -39,6 +39,59 @@ namespace Veterinaria.Web.Controllers
             return View(citas);
         }
 
+        [HttpGet("Details/{id:guid}")]
+        public async Task<IActionResult> Details(Guid id, CancellationToken ct)
+        {
+            var cita = await _procApi.GetCitaAsync(id, ct);
+            if (cita is null) return NotFound();
+            return View(cita);
+        }
+
+        [HttpGet("Edit/{id:guid}")]
+        public async Task<IActionResult> Edit(Guid id, CancellationToken ct)
+        {
+            var cita = await _procApi.GetCitaAsync(id, ct);
+            if (cita is null) return NotFound();
+
+            ViewBag.Estados = new[]
+            {
+        new SelectListItem("Pendiente",  "Pendiente",  cita.Estado == "Pendiente"),
+        new SelectListItem("Completada", "Completada", cita.Estado == "Completada"),
+        new SelectListItem("Cancelada",  "Cancelada",  cita.Estado == "Cancelada"),
+    };
+
+            // Usamos directamente el DTO de lectura de Citas del ApiClient
+            return View(cita);
+        }
+
+        [HttpPost("Edit/{id:guid}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(Guid id, [FromForm] string Estado, [FromForm] string? Notas, CancellationToken ct)
+        {
+            // Normaliza a los 3 valores que acepta tu CHECK de SQL
+            string NormEstado(string? e) => (e ?? "").Trim().ToLowerInvariant() switch
+            {
+                "pendiente" => "Pendiente",
+                "completada" => "Completada",
+                "cancelada" => "Cancelada",
+                _ => "Pendiente"
+            };
+
+            var dto = new Veterinaria.Web.Services.ProcedimientoMascotasApiClient.CitaUpdateDto
+            {
+                Estado = NormEstado(Estado),
+                Notas = Notas
+                // Si más adelante permites editar fecha/vet/servicio, aquí los mapeas
+            };
+
+            await _procApi.UpdateCitaAsync(id, dto, ct);
+
+            TempData["Ok"] = "Cita actualizada correctamente.";
+            return RedirectToAction(nameof(Index));
+        }
+
+
+
 
         [HttpGet("Create")]
         public async Task<IActionResult> Create(CancellationToken ct)
@@ -72,6 +125,24 @@ namespace Veterinaria.Web.Controllers
 
             return View(vm);
         }
+
+        [HttpPost("Delete/{id:guid}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+        {
+            try
+            {
+                await _procApi.DeleteCitaAsync(id, ct);
+                TempData["Ok"] = "Cita eliminada correctamente.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Err"] = $"No se pudo eliminar la cita: {ex.Message}";
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+
 
 
         private async Task<List<SelectListItem>> CargarVeterinariosAsync(CancellationToken ct)
@@ -165,11 +236,14 @@ namespace Veterinaria.Web.Controllers
                 FechaHora = vm.Fecha,
                 Estado = estado,                 
                 Notas = vm.Notas,
-                PrecioCobrado = vm.Precio,
+                PrecioCobrado = null,
                 PesoKg = vm.PesoKg
 
 
             }, ct);
+
+
+         
 
 
 

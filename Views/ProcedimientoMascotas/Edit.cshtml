@@ -1,95 +1,99 @@
-﻿@model Veterinaria.Web.Models.ProcedimientoMascotaDto
-@using Veterinaria.Web.Models
+﻿@model Veterinaria.Web.Services.ProcedimientoMascotasApiClient.CitaReadDto
+
 @{
-    ViewData["Title"] = "Editar Procedimiento";
-    var mascotas = (IEnumerable<Veterinaria.Web.Models.MascotaDto>) (ViewBag.MascotasFull ?? Enumerable.Empty<Veterinaria.Web.Models.MascotaDto>());
-
-    var clientesLookupJson = System.Text.Json.JsonSerializer.Serialize(
-        (System.Collections.Generic.Dictionary<System.Guid, string>)(ViewBag.ClientesLookup ?? new System.Collections.Generic.Dictionary<System.Guid, string>())
-    );
+    ViewData["Title"] = "Editar cita";
 }
-<h1 class="mb-3">Editar Procedimiento</h1>
 
-<form asp-action="Edit" method="post">
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post" class="card p-3">
     @Html.AntiForgeryToken()
-    @if (ViewBag.ReturnToAll == true)
-    {
-        <input type="hidden" name="returnToAll" value="true" />
-    }
 
-    <div asp-validation-summary="All" class="text-danger"></div>
-    <input type="hidden" asp-for="Id" />
-
-    <!-- Dueño: no editable -->
-    <input type="hidden" asp-for="ClienteId" id="ClienteIdHidden" />
     <div class="mb-3">
-        <label class="form-label">Cliente (dueño)</label>
-        <input class="form-control" id="ClienteDisplay" readonly />
-        <div class="form-text">Se actualiza automáticamente al cambiar la mascota.</div>
+        <label class="form-label">Mascota</label>
+        <input class="form-control" value="@Model.NombreMascota" readonly />
     </div>
 
-    <!-- Mascota -->
     <div class="mb-3">
-        <label class="form-label" asp-for="MascotaId">Mascota</label>
-        <select class="form-select" asp-for="MascotaId" id="MascotaSelect">
-            <option value="">-- Seleccione --</option>
-            @foreach (var m in mascotas)
-            {
-                if (m.Id == Model.MascotaId)
-                {
-                    <option value="@m.Id" data-clienteid="@m.ClienteId" selected="selected">@m.Nombre (@m.Especie)</option>
-                }
-                else
-                {
-                    <option value="@m.Id" data-clienteid="@m.ClienteId">@m.Nombre (@m.Especie)</option>
-                }
-            }
+        <label class="form-label">Servicio</label>
+        <input class="form-control" value="@Model.Servicio" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha y hora</label>
+        <input class="form-control" value="@Model.FechaHora" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label for="Estado" class="form-label">Estado</label>
+        <select id="Estado" name="Estado" class="form-select">
+            <option value="Pendiente"   selected="@(Model.Estado == "Pendiente")">Pendiente</option>
+            <option value="Completada"  selected="@(Model.Estado == "Completada")">Completada</option>
+            <option value="Cancelada"   selected="@(Model.Estado == "Cancelada")">Cancelada</option>
         </select>
-        <span asp-validation-for="MascotaId" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label class="form-label" asp-for="EmpleadoId">Atendido por</label>
-        <select class="form-select" asp-for="EmpleadoId" asp-items="ViewBag.Empleados"></select>
-        <span asp-validation-for="EmpleadoId" class="text-danger"></span>
+        <label for="Notas" class="form-label">Notas</label>
+        <textarea id="Notas" name="Notas" class="form-control" rows="3">@Model.Notas</textarea>
     </div>
 
-    <div class="row">
-      
-        <div class="col-md-6 mb-3">
-            <label asp-for="Fecha" class="form-label"></label>
-            <input asp-for="Fecha" class="form-control" type="date" />
-            <span asp-validation-for="Fecha" class="text-danger"></span>
-        </div>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Notas" class="form-label"></label>
-        <textarea asp-for="Notas" class="form-control" rows="3"></textarea>
-        <span asp-validation-for="Notas" class="text-danger"></span>
-    </div>
-
-    <button class="btn btn-primary" type="submit">Guardar</button>
-    <a class="btn btn-secondary" asp-action="Index" asp-route-mascotaId="@Model.MascotaId">Volver</a>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
 </form>
+
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        const CLIENTES_LOOKUP = @Html.Raw(clientesLookupJson);
-        (function () {
-            const sel = document.getElementById('MascotaSelect');
-            const hid = document.getElementById('ClienteIdHidden');
-            const disp = document.getElementById('ClienteDisplay');
+        (function(){
+          const API = 'https://localhost:7195';
+          const ddl  = document.getElementById('ServicioId');
+          const selValue = '@Model.ServicioId';
+          const precioInfo = document.getElementById('PrecioInfo');
+          let servicios = [];
+          const fmtCRC = new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' });
 
-            function syncOwner() {
-                const opt = sel.options[sel.selectedIndex];
-                const cid = opt ? opt.getAttribute('data-clienteid') : '';
-                if (cid) { hid.value = cid; disp.value = CLIENTES_LOOKUP[cid] || cid; }
-                else { hid.value = ''; disp.value = ''; }
+          function setPrecioUI(item){
+            if(!item){ precioInfo.textContent = 'Precio: —'; return; }
+            precioInfo.textContent = `Precio base: ${fmtCRC.format(Number(item.precioBase||0))}`;
+          }
+
+          async function loadServicios(){
+            ddl.innerHTML = '';
+            ddl.add(new Option('Cargando servicios...', ''));
+            ddl.disabled = true;
+            try{
+              const resp = await fetch(`${API}/api/servicios?soloActivos=false`, { headers: { accept: 'application/json, text/plain' }});
+              const data = await resp.json();
+              servicios = (Array.isArray(data)?data:[]).map(x => ({
+                servicioId: Number(x.servicioId ?? x.ServicioId),
+                nombre: x.nombre ?? x.Nombre ?? '(Sin nombre)',
+                precioBase: Number(x.precioBase ?? x.PrecioBase ?? 0),
+                activo: Boolean(x.activo ?? x.Activo ?? true)
+              }));
+              ddl.innerHTML = '';
+              ddl.add(new Option('-- Seleccione un servicio --', ''));
+              servicios
+                .sort((a,b)=>a.nombre.localeCompare(b.nombre))
+                .forEach(s => ddl.add(new Option(`${s.nombre}`, String(s.servicioId))));
+              if (selValue) ddl.value = String(selValue);
+              const item = servicios.find(x => String(x.servicioId) === ddl.value);
+              setPrecioUI(item);
+              ddl.disabled = false;
+            }catch(e){
+              console.error(e);
+              ddl.innerHTML = '';
+              ddl.add(new Option('— Error cargando servicios —', ''));
             }
-            sel.addEventListener('change', syncOwner);
-            syncOwner(); // inicial
+          }
+
+          ddl.addEventListener('change', ()=>{
+            const item = servicios.find(x => String(x.servicioId) === ddl.value);
+            setPrecioUI(item);
+          });
+
+          document.addEventListener('DOMContentLoaded', loadServicios);
         })();
     </script>
 }
