@@ -168,26 +168,15 @@ namespace Veterinaria.Web.Controllers
             }
 
 
-            var dto = new ProcedimientoMascotasApiClient.ProcedimientoMascotaCreateDto
+            await _procApi.CreateCitaAsync(new ProcedimientoMascotasApiClient.CitaCreateDto
             {
                 MascotaId = vm.MascotaId!.Value,
-                ClienteId = vm.ClienteId,
-                EmpleadoId = vm.EmpleadoId,
-                Tipo = vm.Tipo,
-                Fecha = vm.Fecha,
-                Notas = vm.Notas,
-                Precio = vm.Precio,          
-                IvaPorcentaje = vm.IvaPorcentaje,
-                Estado = estado
-            };
-
-            await _procApi.CreateAsync(
-                    dto,
-                    servicioId: null,   
-                    codigo: vm.Codigo,  
-                    pesoKg: vm.PesoKg,
-                    ct: ct
-                );
+                ServicioId = vm.ServicioId ?? 0,     
+                VeterinarioId = vm.EmpleadoId!.Value,
+                FechaHora = vm.Fecha,
+                Estado = estado,                 
+                Notas = vm.Notas
+            }, ct);
 
 
 
