@@ -20,6 +20,8 @@ namespace Veterinaria.Web
             builder.Services.AddHttpClient<MascotasApiClient>(c => c.BaseAddress = new Uri(apiBase));
             builder.Services.AddHttpClient<EmpleadosApiClient>(c => c.BaseAddress = new Uri(apiBase));
             builder.Services.AddHttpClient<ProcedimientoMascotasApiClient>(c => c.BaseAddress = new Uri(apiBase));
+            builder.Services.AddHttpClient<Veterinaria.Web.Services.ReportesApiClient>(c => new Uri(apiBase));
+
 
             builder.Services.AddControllersWithViews()
                 .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));

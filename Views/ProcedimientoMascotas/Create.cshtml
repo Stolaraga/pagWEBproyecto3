@@ -71,6 +71,18 @@
         <span asp-validation-for="EmpleadoId" class="text-danger"></span>
     </div>
 
+    <!-- Fecha y hora de la cita -->
+    <div class="mb-3">
+        <label asp-for="Fecha" class="form-label">Fecha y hora</label>
+        <input asp-for="Fecha"
+               class="form-control"
+               type="datetime-local"
+               id="Fecha"
+               step="60" /> <!-- pasos de 1 minuto; cambia a 900 si quieres intervalos de 15 min -->
+        <span asp-validation-for="Fecha" class="text-danger"></span>
+    </div>
+
+
     <!-- Estado (valores permitidos por CK_Citas_Estado) -->
     <div class="mb-3">
         <label for="Estado" class="form-label">Estado</label>
