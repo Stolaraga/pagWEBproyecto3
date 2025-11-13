@@ -10,35 +10,39 @@
     @Html.AntiForgeryToken()
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <!-- Procedimiento / Tipo de consulta -->
+    <!-- ===== Procedimiento / Servicio ===== -->
     <div class="mb-3">
         <label for="ProcedimientoId" class="form-label">Tipo de consulta / Procedimiento</label>
+        
         <select id="ProcedimientoId" class="form-select">
             <option value="">-- Seleccione un procedimiento --</option>
         </select>
+        <span asp-validation-for="ServicioId" class="text-danger"></span>
+
         <div class="form-text" id="PrecioInfo">Precio: —</div>
     </div>
 
     <!-- IVA -->
     <div class="mb-3">
-        <label for="IvaPorcentaje" class="form-label">IVA (%)</label>
-        <input type="number" step="0.01" min="0" id="IvaPorcentaje" class="form-control" value="13" />
-        <div class="form-text">Se aplicará sobre el precio base (o precio por kg) para calcular el total.</div>
+        <label asp-for="IvaPorcentaje" class="form-label"></label>
+        <input asp-for="IvaPorcentaje" class="form-control" type="number" step="0.01" min="0" max="100" />
+        <span class="form-text">Se aplica al total mostrado (por defecto 13%).</span>
+        <span asp-validation-for="IvaPorcentaje" class="text-danger"></span>
     </div>
 
-    <!-- Peso (solo si el procedimiento es por kilo) -->
+    <!-- Peso (solo cirugías por kg) -->
     <div class="mb-3" id="PesoGroup" style="display:none;">
-        <label for="PesoKg" class="form-label">Peso de la mascota (kg)</label>
-        <input type="number" step="0.01" min="0" id="PesoKg" class="form-control" placeholder="Ej. 8.50">
+        <label asp-for="PesoKg" class="form-label">Peso de la mascota (kg)</label>
+        <input asp-for="PesoKg" class="form-control" type="number" step="0.01" min="0" id="PesoKg" placeholder="Ej. 8.50" />
+        <span asp-validation-for="PesoKg" class="text-danger"></span>
     </div>
 
-    <!-- Hidden para POST -->
-    <input type="hidden" name="Tipo" id="Tipo" />
-    <input type="hidden" name="Precio" id="Precio" />
-    <input type="hidden" name="PesoKg" id="PesoHidden" />
-    <input type="hidden" name="IvaPorcentaje" id="IvaHidden" />
+    <!-- Hidden para POST (se rellenan vía JS) -->
+    <input asp-for="Tipo" type="hidden" id="Tipo" />
+    <input asp-for="Codigo" type="hidden" id="Codigo" />
+    <input asp-for="Precio" type="hidden" id="Precio" />
 
-    <!-- Cliente -->
+    <!-- ===== Cliente ===== -->
     <div class="mb-3">
         <label asp-for="ClienteId" class="form-label"></label>
         <select asp-for="ClienteId" class="form-select" asp-items="Model.Clientes" id="ClienteId">
@@ -47,13 +51,39 @@
         <span asp-validation-for="ClienteId" class="text-danger"></span>
     </div>
 
-    <!-- Mascota (dependiente de Cliente) -->
+    <!-- ===== Mascota (dependiente de Cliente) ===== -->
     <div class="mb-3">
         <label asp-for="MascotaId" class="form-label"></label>
         <select asp-for="MascotaId" class="form-select" id="MascotaId" data-selected="@Model.MascotaId">
             <option value="">-- Seleccione una mascota --</option>
         </select>
         <span asp-validation-for="MascotaId" class="text-danger"></span>
+    </div>
+
+    <!-- ===== Veterinario ===== -->
+    <div class="mb-3">
+        <label asp-for="EmpleadoId" class="form-label"></label>
+        <select asp-for="EmpleadoId" class="form-select" asp-items="Model.Veterinarios" id="EmpleadoId">
+            <option value="">-- Seleccione un veterinario --</option>
+        </select>
+        <span asp-validation-for="EmpleadoId" class="text-danger"></span>
+    </div>
+
+    <!-- Estado (valores permitidos por CK_Citas_Estado) -->
+    <div class="mb-3">
+        <label for="Estado" class="form-label">Estado</label>
+        <select name="Estado" id="Estado" class="form-select">
+            <option value="Pendiente" selected>Pendiente</option>
+            <option value="Completada">Completada</option>
+            <option value="Cancelada">Cancelada</option>
+        </select>
+        <div class="form-text">Solo se aceptan: Pendiente, Completada o Cancelada.</div>
+    </div>
+
+    <!-- Notas opcionales -->
+    <div class="mb-3">
+        <label asp-for="Notas" class="form-label">Notas</label>
+        <textarea asp-for="Notas" class="form-control" rows="2" placeholder="Observaciones..."></textarea>
     </div>
 
     <div class="d-flex gap-2">
@@ -64,191 +94,149 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-
     <script>
         (function () {
-            const ddlCliente   = document.getElementById('ClienteId');
-            const ddlMascota   = document.getElementById('MascotaId');
+            const API = 'https://localhost:7195';
 
-            // ------ Procedimientos / Precios ------
-            const ddlProc      = document.getElementById('ProcedimientoId');
-            const precioInfo   = document.getElementById('PrecioInfo');
-            const pesoGroup    = document.getElementById('PesoGroup');
-            const pesoInput    = document.getElementById('PesoKg');
+            // ---- Procedimientos (catálogo) ----
+            const ddlProc    = document.getElementById('ProcedimientoId');
+            const precioInfo = document.getElementById('PrecioInfo');
+            const ivaInput   = document.getElementById('IvaPorcentaje');
+            const pesoGroup  = document.getElementById('PesoGroup');
+            const pesoInput  = document.getElementById('PesoKg');
 
-            const ivaInput     = document.getElementById('IvaPorcentaje');
+            const hidTipo    = document.getElementById('Tipo');
+            const hidCodigo  = document.getElementById('Codigo');
+            const hidPrecio  = document.getElementById('Precio');
 
-            const hidTipo      = document.getElementById('Tipo');
-            const hidPrecio    = document.getElementById('Precio');
-            const hidPeso      = document.getElementById('PesoHidden');
-            const hidIva       = document.getElementById('IvaHidden');
-
-            const selectedMascota = ddlMascota.dataset.selected;
-            let catalogo = [];
-
+            let catalogo = []; // [{codigo, nombre, precio}]
             const fmtCRC = new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' });
+            const norm = s => (s||'').normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
+            const esPorKg = n => { n = norm(n); return n.includes('cirugia menor') || n.includes('cirugia mayor'); };
 
-            function normaliza(txt) {
-                return (txt || '').toString()
-                    .normalize('NFD').replace(/\p{Diacritic}/gu,'')
-                    .toLowerCase().trim();
+            function mapCodigoToTipo(cod) {
+                switch ((cod || '').toUpperCase()) {
+                    case 'CONSULTA':           return 'Consulta';
+                    case 'VACUNAS_ANUALES':    return 'VacunasAnual';
+                    case 'DESPARASITACION':    return 'Desparasitacion';
+                    case 'CIRUGIA_MENOR':      return 'CirugiaMenor';
+                    case 'CIRUGIA_MAYOR':      return 'CirugiaMayor';
+                    default:                   return 'Consulta';
+                }
             }
 
-            function esPorKilo(nombre) {
-                const n = normaliza(nombre);
-                return n.includes('cirugia menor') || n.includes('cirugia mayor');
-            }
-
-            function getIva() {
-                const v = Number(ivaInput.value);
-                return isNaN(v) ? 0 : Math.max(0, v);
-            }
-
-            function setPrecioUI(item, pesoActual) {
+            function setPrecioUI(item) {
                 if (!item) {
                     precioInfo.textContent = 'Precio: —';
                     pesoGroup.style.display = 'none';
-                    hidTipo.value = '';
                     hidPrecio.value = '';
-                    hidPeso.value = '';
-                    hidIva.value = '';
                     return;
                 }
-                const base   = Number(item.precio ?? item.precioBase ?? item.costo ?? 0);
-                const nombre = item.nombre ?? item.descripcion ?? item.tipo ?? 'Procedimiento';
-                const ivaPct = getIva();
+                const base = Number(item.precio || 0);
+                const porKg = esPorKg(item.nombre);
+                pesoGroup.style.display = porKg ? '' : 'none';
 
-                hidTipo.value = nombre;
-
-                let subtotal = base;
-                if (esPorKilo(nombre)) {
-                    pesoGroup.style.display = '';
-                    const kg = Number(pesoActual || pesoInput.value || 0);
-                    subtotal = base * (isNaN(kg) ? 0 : kg);
-                    const ivaMonto = subtotal * (ivaPct / 100);
-                    const total    = subtotal + ivaMonto;
-
-                    precioInfo.textContent =
-                        `Precio: ${fmtCRC.format(base)} × ${kg || 0} kg = ${fmtCRC.format(subtotal)} + IVA ${ivaPct}% (${fmtCRC.format(ivaMonto)}) = Total ${fmtCRC.format(total)}`;
-
-                    hidPrecio.value = total.toFixed(2);
-                    hidPeso.value   = kg || '';
-                    hidIva.value    = ivaPct.toFixed(2);
-                } else {
-                    pesoGroup.style.display = 'none';
-                    const ivaMonto = subtotal * (ivaPct / 100);
-                    const total    = subtotal + ivaMonto;
-
-                    precioInfo.textContent =
-                        `Precio: ${fmtCRC.format(subtotal)} + IVA ${ivaPct}% (${fmtCRC.format(ivaMonto)}) = Total ${fmtCRC.format(total)}`;
-
-                    hidPrecio.value = total.toFixed(2);
-                    hidPeso.value   = '';
-                    hidIva.value    = ivaPct.toFixed(2);
+                let total = base;
+                if (porKg) {
+                    const kg = Number(pesoInput?.value || 0);
+                    total = base * (isNaN(kg) ? 0 : kg);
                 }
+                const iva = Number(ivaInput.value || 0) / 100;
+                const totalConIva = total * (1 + iva);
+
+                precioInfo.textContent = `Precio: ${fmtCRC.format(base)}${porKg ? ' × kg' : ''} — Total c/IVA: ${fmtCRC.format(totalConIva)}`;
+                // si dejas vacío, el API calcula; si quieres forzar, envía total (sin IVA)
+                hidPrecio.value = total ? total.toFixed(2) : '';
             }
 
-            async function loadCatalogo() {
+            async function loadProcedimientos() {
+                ddlProc.innerHTML = '';
+                ddlProc.add(new Option('Cargando procedimientos...', ''));
+                ddlProc.disabled = true;
+
                 try {
-                    const url = `https://localhost:7195/api/catalogo-procedimientos?incluirInactivos=false&nocache=${Date.now()}`;
-                    const resp = await fetch(url, { headers: { "accept": "application/json" }});
-                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                    const data = await resp.json();
-                    catalogo = Array.isArray(data) ? data : [];
+                    const resp = await fetch(`${API}/api/catalogo-procedimientos?incluirInactivos=false`, {
+                        headers: { accept: 'application/json, text/plain' }
+                    });
+                    const txt = await resp.text();
+                    const data = JSON.parse(txt);
+
+                    catalogo = (Array.isArray(data) ? data : []).map(x => ({
+                        codigo:  x.codigo || x.Codigo,
+                        nombre:  x.nombre || x.Nombre || '(Sin nombre)',
+                        precio:  Number(x.precio ?? x.Precio ?? 0)
+                    }));
 
                     ddlProc.innerHTML = '';
                     ddlProc.add(new Option('-- Seleccione un procedimiento --', ''));
-
                     catalogo
-                        .sort((a,b) => (a?.nombre || '').localeCompare(b?.nombre || ''))
-                        .forEach(x => {
-                            const nombre = x.nombre ?? x.descripcion ?? x.tipo ?? '(Sin nombre)';
-                            const base   = Number(x.precio ?? x.precioBase ?? x.costo ?? 0);
-                            const etiqueta = `${nombre} — ${fmtCRC.format(base)}${esPorKilo(nombre) ? ' /kg' : ''}`;
-                            ddlProc.add(new Option(etiqueta, x.id || x.catalogoProcedimientoId || nombre));
-                        });
+                        .filter(p => p.codigo)
+                        .sort((a,b) => a.nombre.localeCompare(b.nombre))
+                        .forEach(p => ddlProc.add(new Option(`${p.nombre} — ${fmtCRC.format(p.precio)}`, p.codigo)));
+
+                    ddlProc.disabled = false;
                 } catch (err) {
-                    console.error('Error cargando catálogo:', err);
+                    console.error('Error cargando procedimientos:', err);
                     ddlProc.innerHTML = '';
                     ddlProc.add(new Option('— Error cargando procedimientos —', ''));
+                    ddlProc.disabled = true;
                 }
             }
 
             ddlProc.addEventListener('change', () => {
-                const key  = ddlProc.value;
-                const item = catalogo.find(x => (x.id || x.catalogoProcedimientoId || (x.nombre ?? x.tipo)) == key);
-                setPrecioUI(item);
-            });
-
-            pesoInput.addEventListener('input', () => {
-                const key  = ddlProc.value;
-                const item = catalogo.find(x => (x.id || x.catalogoProcedimientoId || (x.nombre ?? x.tipo)) == key);
+                const cod  = ddlProc.value;
+                const item = catalogo.find(x => x.codigo === cod);
+                hidCodigo.value = cod;               // ?codigo=... para el API
+                hidTipo.value   = mapCodigoToTipo(cod);
                 setPrecioUI(item);
             });
 
             ivaInput.addEventListener('input', () => {
-                const key  = ddlProc.value;
-                const item = catalogo.find(x => (x.id || x.catalogoProcedimientoId || (x.nombre ?? x.tipo)) == key);
+                const item = catalogo.find(x => x.codigo === ddlProc.value);
+                setPrecioUI(item);
+            });
+            pesoInput?.addEventListener('input', () => {
+                const item = catalogo.find(x => x.codigo === ddlProc.value);
                 setPrecioUI(item);
             });
 
-            // ------ Mascotas dependiente de Cliente ------
-            function setMascotasLoading(msg) {
-                ddlMascota.innerHTML = "";
-                ddlMascota.add(new Option(msg, ""));
-                ddlMascota.disabled = true;
-            }
-            function setMascotasEmpty(msg) {
-                ddlMascota.innerHTML = "";
-                ddlMascota.add(new Option(msg, ""));
-                ddlMascota.disabled = true;
-            }
-            function setMascotasOptions(mascotas, preselect) {
-                ddlMascota.innerHTML = "";
-                ddlMascota.add(new Option("-- Seleccione una mascota --", ""));
-                for (const m of mascotas) {
-                    const det = [m.especie, m.raza].filter(Boolean).join(" · ");
-                    const label = det ? `${m.nombre ?? "(Sin nombre)"} — ${det}` : (m.nombre ?? "(Sin nombre)");
-                    ddlMascota.add(new Option(label, m.id));
-                }
-                ddlMascota.disabled = false;
-                if (preselect) ddlMascota.value = preselect;
+            // ---- Mascotas dependientes de Cliente ----
+            const ddlCliente = document.getElementById('ClienteId');
+            const ddlMascota = document.getElementById('MascotaId');
+
+            function setMascotas(msg, disabled) {
+                ddlMascota.innerHTML = '';
+                ddlMascota.add(new Option(msg, ''));
+                ddlMascota.disabled = disabled;
             }
             async function loadMascotas(clienteId, preselect = null) {
-                if (!clienteId) {
-                    setMascotasEmpty("— Seleccione un cliente primero —");
-                    return;
-                }
-                setMascotasLoading("Cargando mascotas...");
+                if (!clienteId) return setMascotas('— Seleccione un cliente primero —', true);
+                setMascotas('Cargando mascotas...', true);
                 try {
-                    const url = `https://localhost:7195/api/Mascotas?clienteId=${encodeURIComponent(clienteId)}&nocache=${Date.now()}`;
-                    const resp = await fetch(url, { headers: { "accept": "application/json, text/plain" } });
-                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const url = `${API}/api/Mascotas?clienteId=${encodeURIComponent(clienteId)}&nocache=${Date.now()}`;
+                    const resp = await fetch(url, { headers: { accept: 'application/json, text/plain' } });
                     const data = await resp.json();
-                    if (!Array.isArray(data) || data.length === 0) {
-                        setMascotasEmpty("— No hay mascotas para este cliente —");
-                        return;
-                    }
-                    setMascotasOptions(data, preselect);
-                } catch (err) {
-                    console.error("Error cargando mascotas:", err);
-                    setMascotasEmpty("— Error cargando mascotas —");
+                    ddlMascota.innerHTML = '';
+                    ddlMascota.add(new Option('-- Seleccione una mascota --', ''));
+                    (data || []).forEach(m => {
+                        const det = [m.especie, m.raza].filter(Boolean).join(' · ');
+                        ddlMascota.add(new Option(`${m.nombre ?? '(Sin nombre)'}${det ? ' — ' + det : ''}`, m.id));
+                    });
+                    ddlMascota.disabled = false;
+                    if (preselect) ddlMascota.value = preselect;
+                } catch (e) {
+                    console.error('Error cargando mascotas:', e);
+                    setMascotas('— Error cargando mascotas —', true);
                 }
             }
-            ddlCliente.addEventListener('change', (e) => {
-                loadMascotas(e.target.value);
-            });
+            ddlCliente?.addEventListener('change', e => loadMascotas(e.target.value));
 
-            // Precarga al abrir
+            // init
             document.addEventListener('DOMContentLoaded', () => {
-                // asegura 13% por defecto
-                if (!ivaInput.value) ivaInput.value = 13;
-
-                loadCatalogo();
-
-                const currentCliente = ddlCliente.value;
-                if (currentCliente) loadMascotas(currentCliente, ddlMascota.dataset.selected);
-                else setMascotasEmpty("— Seleccione un cliente primero —");
+                loadProcedimientos();
+                const currentCliente = ddlCliente?.value;
+                if (currentCliente) loadMascotas(currentCliente, ddlMascota?.dataset?.selected || null);
+                else setMascotas('— Seleccione un cliente primero —', true);
             });
         })();
     </script>

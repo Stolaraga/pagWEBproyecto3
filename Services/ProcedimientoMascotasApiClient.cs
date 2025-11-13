@@ -1,4 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using System.Globalization;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Veterinaria.Web.Models;
 
@@ -7,100 +9,78 @@ namespace Veterinaria.Web.Services
     public class ProcedimientoMascotasApiClient
     {
         private readonly HttpClient _http;
-        private static readonly JsonSerializerOptions _json = new() { PropertyNameCaseInsensitive = true };
-
         public ProcedimientoMascotasApiClient(HttpClient http) => _http = http;
 
-        /// <summary>
-        /// Lista procedimientos. Puede filtrar por mascotaId. Agrega un parámetro nocache para evitar caching.
-        /// </summary>
-        public async Task<IEnumerable<ProcedimientoMascotaDto>> GetAllAsync(Guid? mascotaId = null, bool noCache = true)
+        // DTO que enviamos al API
+        public sealed class ProcedimientoMascotaCreateDto
+        {
+            public Guid MascotaId { get; set; }
+            public Guid? ClienteId { get; set; }
+            public Guid? EmpleadoId { get; set; }
+            public string Tipo { get; set; } = "Consulta"; // nombre del enum
+            public DateTime Fecha { get; set; }
+            public string? Notas { get; set; }
+            public decimal? Precio { get; set; }           // null => API calcula
+            public decimal IvaPorcentaje { get; set; } = 13m;
+            public string Estado { get; set; } = "Agendado";
+        }
+
+        public async Task<bool> CreateAsync(
+            ProcedimientoMascotaCreateDto dto,
+            int? servicioId = null,
+            string? codigo = null,
+            decimal? pesoKg = null,
+            CancellationToken ct = default)
         {
             var url = "/api/ProcedimientoMascotas";
-            var qs = new List<string>();
+            var qs = new Dictionary<string, string>();
 
-            if (mascotaId.HasValue && mascotaId.Value != Guid.Empty)
-                qs.Add($"mascotaId={mascotaId.Value:D}");
+            if (servicioId is not null) qs["servicioId"] = servicioId.Value.ToString();
+            if (!string.IsNullOrWhiteSpace(codigo)) qs["codigo"] = codigo!;
+            if (pesoKg is not null) qs["peso"] = (pesoKg ?? 0m).ToString(CultureInfo.InvariantCulture);
 
-            if (noCache)
-                qs.Add($"nocache={DateTimeOffset.UtcNow.Ticks}");
+            if (qs.Count > 0) url = QueryHelpers.AddQueryString(url, qs);
 
-            if (qs.Count > 0)
-                url += "?" + string.Join("&", qs);
-
-            using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-            var body = await resp.Content.ReadAsStringAsync();
-
-            if (!resp.IsSuccessStatusCode)
-                throw new HttpRequestException($"GET {url} => {(int)resp.StatusCode} {resp.ReasonPhrase}. Body: {body}");
-
-            return JsonSerializer.Deserialize<List<ProcedimientoMascotaDto>>(body, _json) ?? new();
-        }
-
-        /// <summary>
-        /// Obtiene un procedimiento por Id.
-        /// </summary>
-        public async Task<ProcedimientoMascotaDto?> GetByIdAsync(Guid id)
-        {
-            var url = $"api/ProcedimientoMascotas/{id:D}";
-            using var resp = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-
-            if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
-                return null;
-
-            var body = await resp.Content.ReadAsStringAsync();
-            if (!resp.IsSuccessStatusCode)
-                throw new HttpRequestException($"GET {url} => {(int)resp.StatusCode} {resp.ReasonPhrase}. Body: {body}");
-
-            return JsonSerializer.Deserialize<ProcedimientoMascotaDto>(body, _json);
-        }
-
-        /// <summary>
-        /// Crea un procedimiento.
-        /// </summary>
-        public async Task<bool> CreateAsync(ProcedimientoMascotaCreateDto dto, CancellationToken ct = default)
-        {
-            var url = "api/ProcedimientoMascotas";
             using var resp = await _http.PostAsJsonAsync(url, dto, ct);
-
             if (!resp.IsSuccessStatusCode)
             {
                 var body = await resp.Content.ReadAsStringAsync(ct);
+                throw new HttpRequestException($"POST {url} => {(int)resp.StatusCode}. {body}");
+            }
+            return true;
+        }
+
+        public sealed class CitaCreateDto
+        {
+            public Guid MascotaId { get; set; }
+            public int ServicioId { get; set; }         // si no lo tienes, manda 0
+            public Guid VeterinarioId { get; set; }      // = EmpleadoId (GUID)
+            public DateTime FechaHora { get; set; }
+            public string? Estado { get; set; }
+            public string? Notas { get; set; }
+        }
+
+        // POST /api/Citas con el formato requerido
+        public async Task<Guid> CreateCitaAsync(CitaCreateDto dto, CancellationToken ct = default)
+        {
+            const string url = "api/citas";
+            using var resp = await _http.PostAsJsonAsync(url, dto, ct);
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            if (!resp.IsSuccessStatusCode)
                 throw new HttpRequestException($"POST {url} => {(int)resp.StatusCode} {resp.ReasonPhrase}. Body: {body}");
-            }
-            return true;
-        }
 
-        /// <summary>
-        /// Actualiza un procedimiento.
-        /// </summary>
-        public async Task<bool> UpdateAsync(Guid id, ProcedimientoMascotaUpdateDto dto, CancellationToken ct = default)
-        {
-            var url = $"api/ProcedimientoMascotas/{id:D}";
-            using var resp = await _http.PutAsJsonAsync(url, dto, ct);
-
-            if (!resp.IsSuccessStatusCode)
+            // Si la API devuelve el objeto creado, intenta leer el Id (opcional)
+            try
             {
-                var body = await resp.Content.ReadAsStringAsync(ct);
-                throw new HttpRequestException($"PUT {url} => {(int)resp.StatusCode} {resp.ReasonPhrase}. Body: {body}");
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("id", out var idProp) &&
+                    Guid.TryParse(idProp.GetString(), out var id))
+                    return id;
             }
-            return true;
+            catch { /* no pasa nada si no viene Id */ }
+
+            return Guid.Empty;
         }
 
-        /// <summary>
-        /// Elimina un procedimiento.
-        /// </summary>
-        public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            var url = $"api/ProcedimientoMascotas/{id:D}";
-            using var resp = await _http.DeleteAsync(url, ct);
-
-            if (!resp.IsSuccessStatusCode)
-            {
-                var body = await resp.Content.ReadAsStringAsync(ct);
-                throw new HttpRequestException($"DELETE {url} => {(int)resp.StatusCode} {resp.ReasonPhrase}. Body: {body}");
-            }
-            return true;
-        }
     }
 }
