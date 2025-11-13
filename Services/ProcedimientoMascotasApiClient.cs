@@ -53,11 +53,15 @@ namespace Veterinaria.Web.Services
         public sealed class CitaCreateDto
         {
             public Guid MascotaId { get; set; }
-            public int ServicioId { get; set; }         // si no lo tienes, manda 0
-            public Guid VeterinarioId { get; set; }      // = EmpleadoId (GUID)
+            public int ServicioId { get; set; }         
+            public Guid VeterinarioId { get; set; }     
             public DateTime FechaHora { get; set; }
             public string? Estado { get; set; }
             public string? Notas { get; set; }
+
+            public decimal? PrecioCobrado { get; set; } 
+            public decimal? PesoKg { get; set; }
+
         }
 
         // POST /api/Citas con el formato requerido
@@ -118,6 +122,7 @@ namespace Veterinaria.Web.Services
             public string? NombreMascota { get; set; }
             public string? Servicio { get; set; }
             public string? Veterinario { get; set; }
+            public decimal? PrecioCobrado { get; set; }
         }
 
         public async Task<IEnumerable<CitaReadDto>> GetCitasAsync(

@@ -1,49 +1,63 @@
-﻿@model IEnumerable<Veterinaria.Web.Models.ProcedimientoMascotaDto>
+﻿@model IEnumerable<Veterinaria.Web.Services.ProcedimientoMascotasApiClient.CitaReadDto>
+
 @{
     ViewData["Title"] = "Procedimientos";
-    var cr = System.Globalization.CultureInfo.GetCultureInfo("es-CR");
+    var cr = new System.Globalization.CultureInfo("es-CR");
 }
 
-<h2 class="mb-3">@ViewData["Title"]</h2>
+<h2 class="mb-3">Procedimientos</h2>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Nuevo</a>
-</p>
+@if (TempData["Ok"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
 
-<table class="table table-striped">
+<div class="mb-3">
+    <a asp-action="Create" class="btn btn-primary">Nuevo procedimiento</a>
+</div>
+
+<table class="table table-striped table-hover align-middle">
     <thead>
         <tr>
             <th>Fecha</th>
             <th>Mascota</th>
-            <th>Tipo</th>
+            <th>Servicio</th>
+            <th>Veterinario</th>
             <th>Estado</th>
-            <th class="text-end">Precio</th>
+            <th class="text-end">Precio cobrado</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-        @if (Model != null && Model.Any())
-        {
-            foreach (var p in Model)
-            {
-                <tr>
-                    <td>@p.Fecha.ToString("yyyy-MM-dd HH:mm")</td>
-                    <td>@(string.IsNullOrWhiteSpace(p.NombreMascota) ? (p.MascotaNombre ?? "—") : p.NombreMascota)</td>
-                    <td>@(string.IsNullOrWhiteSpace(p.Tipo) ? "—" : p.Tipo)</td>
-                    <td>@p.Estado</td>
-                    <td class="text-end">@p.Precio.ToString("C", cr)</td>
-                    <td>
-                        <a asp-action="Details" asp-route-id="@p.Id">Detalles</a> |
-                        <a asp-action="Edit" asp-route-id="@p.Id">Editar</a> |
-                        <a asp-action="Delete" asp-route-id="@p.Id">Eliminar</a>
-                    </td>
-                </tr>
-            }
-        }
-        else
+        @foreach (var x in Model ?? Enumerable.Empty<Veterinaria.Web.Services.ProcedimientoMascotasApiClient.CitaReadDto>())
         {
             <tr>
-                <td colspan="6" class="text-center text-muted">No hay procedimientos.</td>
+                <td>@x.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>@(string.IsNullOrWhiteSpace(x.NombreMascota) ? "(s/nombre)" : x.NombreMascota)</td>
+                <td>@(string.IsNullOrWhiteSpace(x.Servicio) ? "(servicio)" : x.Servicio)</td>
+                <td>@(string.IsNullOrWhiteSpace(x.Veterinario) ? "(veterinario)" : x.Veterinario)</td>
+                <td>
+                    @if (string.Equals(x.Estado, "Completada", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="badge bg-success">Completada</span>
+                    }
+                    else if (string.Equals(x.Estado, "Cancelada", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="badge bg-danger">Cancelada</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                    }
+                </td>
+                <td class="text-end">
+                    @(x.PrecioCobrado.HasValue ? string.Format(cr, "{0:C}", x.PrecioCobrado.Value) : "—")
+                </td>
+                <td class="text-nowrap">
+                    <a asp-action="Details" asp-route-id="@x.Id" class="btn btn-sm btn-outline-secondary">Detalles</a>
+                    <a asp-action="Edit" asp-route-id="@x.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                    <a asp-action="Delete" asp-route-id="@x.Id" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                </td>
             </tr>
         }
     </tbody>
