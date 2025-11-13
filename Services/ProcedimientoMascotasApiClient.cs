@@ -82,5 +82,70 @@ namespace Veterinaria.Web.Services
             return Guid.Empty;
         }
 
+        public async Task<IEnumerable<ProcedimientoMascotaDto>> GetAllAsync(
+            Guid? mascotaId = null,
+            string? estado = null,
+            CancellationToken ct = default)
+        {
+            var url = "/api/ProcedimientoMascotas";
+            var qs = new Dictionary<string, string>();
+            if (mascotaId is not null) qs["mascotaId"] = mascotaId.Value.ToString();
+            if (!string.IsNullOrWhiteSpace(estado)) qs["estado"] = estado!;
+            if (qs.Count > 0) url = QueryHelpers.AddQueryString(url, qs);
+
+            using var resp = await _http.GetAsync(url, ct);
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            if (!resp.IsSuccessStatusCode)
+                throw new HttpRequestException($"GET {url} => {(int)resp.StatusCode}. {body}");
+
+            return JsonSerializer.Deserialize<IEnumerable<ProcedimientoMascotaDto>>(
+                       body,
+                       new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                   ) ?? Enumerable.Empty<ProcedimientoMascotaDto>();
+        }
+
+        public sealed class CitaReadDto
+        {
+            public Guid Id { get; set; }
+            public Guid MascotaId { get; set; }
+            public int ServicioId { get; set; }
+            public Guid VeterinarioId { get; set; }
+            public DateTime FechaHora { get; set; }
+            public string? Estado { get; set; }
+            public string? Notas { get; set; }
+
+            // vienen por JOIN en el repo de Citas
+            public string? NombreMascota { get; set; }
+            public string? Servicio { get; set; }
+            public string? Veterinario { get; set; }
+        }
+
+        public async Task<IEnumerable<CitaReadDto>> GetCitasAsync(
+            Guid? mascotaId = null,
+            string? estado = null,
+            DateTime? desde = null,
+            DateTime? hasta = null,
+            CancellationToken ct = default)
+        {
+            var url = "/api/citas";
+            var qs = new Dictionary<string, string>();
+            if (mascotaId is not null) qs["mascotaId"] = mascotaId.Value.ToString();
+            if (!string.IsNullOrWhiteSpace(estado)) qs["estado"] = estado!;
+            if (desde is not null) qs["desde"] = ((DateTime)desde!).ToString("o");
+            if (hasta is not null) qs["hasta"] = ((DateTime)hasta!).ToString("o");
+            if (qs.Count > 0) url = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(url, qs);
+
+            using var resp = await _http.GetAsync(url, ct);
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            if (!resp.IsSuccessStatusCode)
+                throw new HttpRequestException($"GET {url} => {(int)resp.StatusCode}. {body}");
+
+            return System.Text.Json.JsonSerializer.Deserialize<IEnumerable<CitaReadDto>>(
+                       body,
+                       new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                   ) ?? Enumerable.Empty<CitaReadDto>();
+        }
+
+
     }
 }

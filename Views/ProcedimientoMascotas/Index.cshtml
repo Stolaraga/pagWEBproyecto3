@@ -1,19 +1,50 @@
-﻿@{
-    ViewData["Title"] = "Procedimiento Mascotas";
+﻿@model IEnumerable<Veterinaria.Web.Models.ProcedimientoMascotaDto>
+@{
+    ViewData["Title"] = "Procedimientos";
+    var cr = System.Globalization.CultureInfo.GetCultureInfo("es-CR");
 }
 
-<h2 class="mb-3">Procedimiento Mascotas</h2>
+<h2 class="mb-3">@ViewData["Title"]</h2>
 
-<div class="mb-3">
+<p>
     <a asp-action="Create" class="btn btn-primary">Nuevo</a>
-</div>
+</p>
 
-<!-- Aquí tu grid/tabla actual del Index -->
-<div>
-    @* tabla de procedimientos *@
-</div>
-
-@if (TempData["Ok"] is string okMsg)
-{
-    <div class="alert alert-success mt-3">@okMsg</div>
-}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Mascota</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th class="text-end">Precio</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p.Fecha.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@(string.IsNullOrWhiteSpace(p.NombreMascota) ? (p.MascotaNombre ?? "—") : p.NombreMascota)</td>
+                    <td>@(string.IsNullOrWhiteSpace(p.Tipo) ? "—" : p.Tipo)</td>
+                    <td>@p.Estado</td>
+                    <td class="text-end">@p.Precio.ToString("C", cr)</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@p.Id">Detalles</a> |
+                        <a asp-action="Edit" asp-route-id="@p.Id">Editar</a> |
+                        <a asp-action="Delete" asp-route-id="@p.Id">Eliminar</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" class="text-center text-muted">No hay procedimientos.</td>
+            </tr>
+        }
+    </tbody>
+</table>

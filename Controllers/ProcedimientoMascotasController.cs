@@ -9,6 +9,10 @@ using Veterinaria.Web.Services;
 
 namespace Veterinaria.Web.Controllers
 {
+
+
+
+
     [Route("Procedimientos")]
     public sealed class ProcedimientoMascotasController : Controller
     {
@@ -27,9 +31,26 @@ namespace Veterinaria.Web.Controllers
         }
 
         [HttpGet("")]
-        public IActionResult Index() => View();
+        public async Task<IActionResult> Index(Guid? mascotaId, string? estado, CancellationToken ct)
 
-        
+        {
+            
+            var citas = await _procApi.GetCitasAsync(mascotaId, estado, null, null, ct);
+
+            
+            var rows = citas.Select(c => new Veterinaria.Web.Models.ProcedimientoMascotaDto
+            {
+                Id = c.Id,
+                MascotaId = c.MascotaId,
+                Tipo = c.Servicio,
+                Fecha = c.FechaHora,
+                Estado = string.IsNullOrWhiteSpace(c.Estado) ? "Pendiente" : c.Estado!,
+                NombreMascota = c.NombreMascota
+            });
+
+            return View(rows);
+        }
+
         [HttpGet("Create")]
         public async Task<IActionResult> Create(CancellationToken ct)
         {
