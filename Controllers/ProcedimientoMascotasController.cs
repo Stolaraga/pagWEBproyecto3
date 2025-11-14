@@ -66,10 +66,16 @@ namespace Veterinaria.Web.Controllers
 
         [HttpPost("Edit/{id:guid}")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [FromForm] string Estado, [FromForm] string? Notas, CancellationToken ct)
+        public async Task<IActionResult> Edit(
+    Guid id,
+    [FromForm] string Estado,
+    [FromForm] string? Notas,
+    [FromForm] DateTime? FechaHora,   // ← NUEVO: opcional
+    [FromForm] int? ServicioId,       // ← NUEVO: opcional
+    CancellationToken ct)
         {
-            // Normaliza a los 3 valores que acepta tu CHECK de SQL
-            string NormEstado(string? e) => (e ?? "").Trim().ToLowerInvariant() switch
+            // Normaliza a los 3 valores permitidos por tu CHECK en SQL
+            static string NormEstado(string? e) => (e ?? "").Trim().ToLowerInvariant() switch
             {
                 "pendiente" => "Pendiente",
                 "completada" => "Completada",
@@ -81,14 +87,29 @@ namespace Veterinaria.Web.Controllers
             {
                 Estado = NormEstado(Estado),
                 Notas = Notas
-                // Si más adelante permites editar fecha/vet/servicio, aquí los mapeas
+                
             };
+
+            // Si el usuario ingresó una fecha, la enviamos; si quedó vacía, NO la tocamos (se conserva en BD)
+            if (FechaHora.HasValue)
+            {
+            
+            
+                dto.FechaHora = FechaHora.Value; // mantener simple si tu API guarda hora local
+            }
+
+            
+            if (ServicioId.HasValue && ServicioId.Value > 0)
+            {
+                dto.ServicioId = ServicioId.Value;
+            }
 
             await _procApi.UpdateCitaAsync(id, dto, ct);
 
             TempData["Ok"] = "Cita actualizada correctamente.";
             return RedirectToAction(nameof(Index));
         }
+
 
 
 

@@ -169,14 +169,14 @@ namespace Veterinaria.Web.Services
 
         public sealed class CitaUpdateDto
         {
-            public Guid MascotaId { get; set; }
-            public int ServicioId { get; set; }
-            public Guid VeterinarioId { get; set; }
-            public DateTime FechaHora { get; set; }
-            public string? Estado { get; set; }
+            public Guid? MascotaId { get; set; }
+            public int? ServicioId { get; set; }          
+            public Guid? VeterinarioId { get; set; }
+            public DateTime? FechaHora { get; set; }       
             public string? Notas { get; set; }
+            public string? Estado { get; set; }
             public decimal? PrecioCobrado { get; set; }
-            public decimal? PesoKg { get; init; }
+            public decimal? PesoKg { get; set; }
         }
 
 

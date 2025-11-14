@@ -14,23 +14,43 @@
         <input class="form-control" value="@Model.NombreMascota" readonly />
     </div>
 
-    <div class="mb-3">
-        <label class="form-label">Servicio</label>
-        <input class="form-control" value="@Model.Servicio" readonly />
+    <div class="mb-1">
+        <small class="text-muted">Procedimiento actual: <strong>@Model.Servicio</strong></small>
     </div>
+    <div class="mb-2" id="PrecioInfo" class="form-text">Precio: —</div>
 
     <div class="mb-3">
-        <label class="form-label">Fecha y hora</label>
-        <input class="form-control" value="@Model.FechaHora" readonly />
+        <label for="ServicioId" class="form-label">Cambiar procedimiento / servicio</label>
+        <select id="ServicioId" name="ServicioId" class="form-select">
+            <option value="">-- (Sin cambio) --</option>
+        </select>
+        <div class="form-text">Si no eliges nada, se conserva el actual.</div>
+    </div>
+
+    <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="toggleFecha" />
+        <label class="form-check-label" for="toggleFecha">Editar fecha y hora</label>
+    </div>
+    <div class="mb-3">
+        <label for="FechaHora" class="form-label">Fecha y hora</label>
+        <input type="datetime-local"
+               id="FechaHora"
+               name="FechaHora"
+               class="form-control"
+               value="@(Model.FechaHora.ToLocalTime().ToString("yyyy-MM-ddTHH:mm"))"
+               disabled />
+        <div class="form-text">Si no activas el interruptor, se conservará la actual.</div>
     </div>
 
     <div class="mb-3">
         <label for="Estado" class="form-label">Estado</label>
-        <select id="Estado" name="Estado" class="form-select">
-            <option value="Pendiente"   selected="@(Model.Estado == "Pendiente")">Pendiente</option>
-            <option value="Completada"  selected="@(Model.Estado == "Completada")">Completada</option>
-            <option value="Cancelada"   selected="@(Model.Estado == "Cancelada")">Cancelada</option>
+        <select name="Estado" id="Estado" class="form-select">
+            <option value="Pendiente">Pendiente</option>
+            <option value="Completada">Completada</option>
+            <option value="Cancelada">Cancelada</option>
         </select>
+
+
     </div>
 
     <div class="mb-3">
@@ -42,44 +62,57 @@
     <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
 </form>
 
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
         (function(){
           const API = 'https://localhost:7195';
           const ddl  = document.getElementById('ServicioId');
-          const selValue = '@Model.ServicioId';
           const precioInfo = document.getElementById('PrecioInfo');
+          const currentServicioId = '@Model.ServicioId'; // int
           let servicios = [];
           const fmtCRC = new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' });
 
+          // Toggle para habilitar/deshabilitar la fecha (si está deshabilitado, no se envía al POST)
+          const toggleFecha = document.getElementById('toggleFecha');
+          const inputFecha  = document.getElementById('FechaHora');
+          toggleFecha.addEventListener('change', () => {
+            inputFecha.disabled = !toggleFecha.checked;
+          });
+
           function setPrecioUI(item){
             if(!item){ precioInfo.textContent = 'Precio: —'; return; }
-            precioInfo.textContent = `Precio base: ${fmtCRC.format(Number(item.precioBase||0))}`;
+            const base = Number(item.precioBase || 0);
+            precioInfo.textContent = `Precio base: ${fmtCRC.format(base)}`;
           }
 
           async function loadServicios(){
             ddl.innerHTML = '';
-            ddl.add(new Option('Cargando servicios...', ''));
+            ddl.add(new Option('-- (Sin cambio) --', ''));
             ddl.disabled = true;
+
             try{
               const resp = await fetch(`${API}/api/servicios?soloActivos=false`, { headers: { accept: 'application/json, text/plain' }});
               const data = await resp.json();
               servicios = (Array.isArray(data)?data:[]).map(x => ({
                 servicioId: Number(x.servicioId ?? x.ServicioId),
-                nombre: x.nombre ?? x.Nombre ?? '(Sin nombre)',
+                nombre:     x.nombre ?? x.Nombre ?? '(Sin nombre)',
                 precioBase: Number(x.precioBase ?? x.PrecioBase ?? 0),
-                activo: Boolean(x.activo ?? x.Activo ?? true)
+                activo:     Boolean(x.activo ?? x.Activo ?? true)
               }));
-              ddl.innerHTML = '';
-              ddl.add(new Option('-- Seleccione un servicio --', ''));
+
               servicios
                 .sort((a,b)=>a.nombre.localeCompare(b.nombre))
                 .forEach(s => ddl.add(new Option(`${s.nombre}`, String(s.servicioId))));
-              if (selValue) ddl.value = String(selValue);
-              const item = servicios.find(x => String(x.servicioId) === ddl.value);
-              setPrecioUI(item);
+
+              // Muestra el precio del servicio ACTUAL, pero NO lo selecciona (para que el POST no lo cambie si no eligen)
+              if (currentServicioId) {
+                const itemActual = servicios.find(x => String(x.servicioId) === String(currentServicioId));
+                setPrecioUI(itemActual);
+              } else {
+                setPrecioUI(null);
+              }
+
               ddl.disabled = false;
             }catch(e){
               console.error(e);
@@ -93,7 +126,10 @@
             setPrecioUI(item);
           });
 
-          document.addEventListener('DOMContentLoaded', loadServicios);
-        })();
+
+                document.addEventListener('DOMContentLoaded', function(){
+          document.getElementById('Estado').value = '@Model.Estado';
+        });
+
     </script>
 }
