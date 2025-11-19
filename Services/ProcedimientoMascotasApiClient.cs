@@ -126,26 +126,27 @@ namespace Veterinaria.Web.Services
             );
         }
 
+
         public async Task<bool> UpdateCitaAsync(Guid id, CitaUpdateDto dto, CancellationToken ct = default)
-{
-    var url = $"api/citas/{id:D}";
+        {
+            var url = $"api/citas/{id:D}";
 
-    // Solo los campos editables que no rompen SQLDateTime:
-    var payload = new
-    {
-        estado = dto.Estado,
-        notas = dto.Notas,
-        precioCobrado = dto.PrecioCobrado,
-        pesoKg = dto.PesoKg
-        // OJO: no enviamos fechaHora, mascotaId, servicioId, veterinarioId
-    };
+            var payload = new
+            {
+                estado = dto.Estado,
+                notas = dto.Notas,
+                fechaHora = dto.FechaHora,          // <-- AHORA SÍ SE ENVÍA
+                precioCobrado = dto.PrecioCobrado,
+                pesoKg = dto.PesoKg
+            };
 
-    using var resp = await _http.PutAsJsonAsync(url, payload, ct);
-    var body = await resp.Content.ReadAsStringAsync(ct);
-    if (!resp.IsSuccessStatusCode)
-        throw new HttpRequestException($"PUT {url} => {(int)resp.StatusCode}. {body}");
-    return true;
-}
+            using var resp = await _http.PutAsJsonAsync(url, payload, ct);
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            if (!resp.IsSuccessStatusCode)
+                throw new HttpRequestException($"PUT {url} => {(int)resp.StatusCode}. {body}");
+            return true;
+        }
+
 
 
 

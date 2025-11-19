@@ -15,7 +15,7 @@ namespace Veterinaria.Web.Services
             public string? ClienteNombre { get; set; }
             public Guid MascotaId { get; set; }
             public string? MascotaNombre { get; set; }
-            public DateTime Proxima { get; set; }  // viene como "2025-11-16T00:00:00"
+            public DateTime Proxima { get; set; }  
         }
 
         public async Task<IEnumerable<ReporteVacunaRow>> GetVacunacionProximaSemanaAsync(CancellationToken ct = default)

@@ -64,18 +64,17 @@ namespace Veterinaria.Web.Controllers
             return View(cita);
         }
 
+
         [HttpPost("Edit/{id:guid}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
     Guid id,
     [FromForm] string Estado,
     [FromForm] string? Notas,
-    [FromForm] DateTime? FechaHora,   // ← NUEVO: opcional
-    [FromForm] int? ServicioId,       // ← NUEVO: opcional
+    [FromForm] DateTime? FechaHora,      // <-- NUEVO
     CancellationToken ct)
         {
-            // Normaliza a los 3 valores permitidos por tu CHECK en SQL
-            static string NormEstado(string? e) => (e ?? "").Trim().ToLowerInvariant() switch
+            string NormEstado(string? e) => (e ?? "").Trim().ToLowerInvariant() switch
             {
                 "pendiente" => "Pendiente",
                 "completada" => "Completada",
@@ -83,32 +82,25 @@ namespace Veterinaria.Web.Controllers
                 _ => "Pendiente"
             };
 
+            // El input datetime-local llega sin zona (Unspecified). Lo marcamos como Local.
+            DateTime? fechaNormalizada = FechaHora.HasValue
+                ? DateTime.SpecifyKind(FechaHora.Value, DateTimeKind.Local)
+                : null;
+
             var dto = new Veterinaria.Web.Services.ProcedimientoMascotasApiClient.CitaUpdateDto
             {
                 Estado = NormEstado(Estado),
-                Notas = Notas
-                
+                Notas = Notas,
+                FechaHora = fechaNormalizada    // <-- MAPEO
             };
-
-            // Si el usuario ingresó una fecha, la enviamos; si quedó vacía, NO la tocamos (se conserva en BD)
-            if (FechaHora.HasValue)
-            {
-            
-            
-                dto.FechaHora = FechaHora.Value; // mantener simple si tu API guarda hora local
-            }
-
-            
-            if (ServicioId.HasValue && ServicioId.Value > 0)
-            {
-                dto.ServicioId = ServicioId.Value;
-            }
 
             await _procApi.UpdateCitaAsync(id, dto, ct);
 
             TempData["Ok"] = "Cita actualizada correctamente.";
             return RedirectToAction(nameof(Index));
         }
+
+
 
 
 
